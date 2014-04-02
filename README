@@ -1,0 +1,30 @@
+timeLapsePro
+-------------
+
+A GUI application to create a timelapse video. 
+Following are some of the featured provided by the tool
+
+1. Select all the pictures required for creating a timelapse. 
+2. Basic image editing like changing brightness, contrast, saturation of the image. 
+3. Generate timelapse with any of the following quality and resolution
+    Quality : 
+    ----------
+	a. High quality MP4 with ljpeg coded
+	b. Low quality MP4 with mpeg codec
+	c. High quality AVI  
+   
+    Resolution :
+    -------------
+	a. 1280x720	- 720p 
+	b. 1920x1080	- 1080p HD
+	c. 2560x1440	- 1440p HD ( aspect ratio 16:9) 
+
+TODO 
+-----
+
+Below are some of the features yet to be implemented. 
+
+1. Allow selecting an entire folder.  
+2. Deflicker the images before generating video. 
+3. Save preferences in $HOME/.timelapsegen folder. 
+4. Cropping of images
