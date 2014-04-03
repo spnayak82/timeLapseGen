@@ -4,9 +4,7 @@
         <file>img/Settings-icon.png</file>
         <file>img/Television-icon.png</file>
         <file>img/Video-icon.png</file>
-        <file>img/Camera-4.png</file>
         <file>img/Pixelmator-icon.png</file>
         <file>img/Time-Machine-icon.png</file>
-        <file>img/Time-Machine-icon1.png</file>
     </qresource>
 </RCC>

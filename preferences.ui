@@ -34,7 +34,7 @@
         <property name="title">
          <string>Size</string>
         </property>
-        <widget class="QWidget" name="">
+        <widget class="QWidget" name="layoutWidget">
          <property name="geometry">
           <rect>
            <x>17</x>
@@ -172,7 +172,11 @@
          </spacer>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEditOutFileName"/>
+         <widget class="QLineEdit" name="lineEditOutFileName">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QToolButton" name="toolButton">

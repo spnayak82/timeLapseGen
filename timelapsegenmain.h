@@ -23,6 +23,13 @@ enum VideoQuality {
     HighQualityAvi
 };
 
+enum enhanceType {
+    None = 0,
+    autoEnhance,
+    vividImage,
+    grayScale
+};
+
 enum VideoResolution {
     v720p = 1,
     v1080p,
@@ -42,6 +49,7 @@ public :
     int getContrast() { return mContrast; }
     int getSaturation() { return mSaturation; }
     int getBrightness() { return mBrightness; }
+    enum enhanceType getAutoEnhancementType() { return eType; }
     QString* getImageFileName() { return imageFileName; }
 
 private slots:
@@ -59,6 +67,14 @@ private slots:
     void on_sliderSaturation_sliderReleased();
     void on_pushButton_clicked();
 
+    void on_radioBtnNone_clicked(bool checked);
+
+    void on_radioBtnAutoEnhance_clicked(bool checked);
+
+    void on_radioBtnVivid_clicked(bool checked);
+
+    void on_radioGrayScale_clicked(bool checked);
+
 private:
     Ui::imageEnhanceDialog *enhanceDialog;
     editImages *imageEditor;
@@ -67,6 +83,11 @@ private:
     int mSaturation;
     QImage *oldImage;
     QString *imageFileName;
+    QPixmap *mapLeft, *mapRight;
+    enum enhanceType eType;
+
+    void disableSliders();
+    void enableSliders();
 };
 
 class Preferences : public QDialog
@@ -86,6 +107,10 @@ private slots:
     void on_BtnCancel_clicked();
     void on_BtnRender_clicked();
 
+    void on_toolButton_clicked();
+    void on_radioBtnMP4High_clicked();
+    void on_radioBtnAVI_clicked();
+
 private :
     Ui::Preferences *preferences;
     enum VideoQuality mQuality;
@@ -102,6 +127,7 @@ public:
     explicit TimeLapseGenMain(QWidget *parent = 0);
     ~TimeLapseGenMain();
     bool checkMencoder();
+    bool renderVideo(QString);
 
 signals :
     void filesSelected();
@@ -119,13 +145,15 @@ private:
     editImages *imageEditor;
     QStringList selectedFileNames;
     QString *mencoderCommandPath;
+    QString *avconvCommandPath;
     int brightness;
     int saturation;
     int contrast;
+    enum enhanceType eType;
     QList<imageFileInfo> ImageFileInfoList;
     int mBrightness, mContrast, mSaturation;
     bool mencoderPresent;
-
+    bool avconvPresent;
 };
 
 

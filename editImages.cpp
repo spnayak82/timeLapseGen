@@ -189,23 +189,22 @@ QImage* editImages::convertToGreyScale(QImage *original){
 QByteArray editImages::enhanceImageWithoutScaling(QString *original, int brightness, int saturation, int contrast)
 {
     Image magickImage;
-    const char *fileName;
-    QImage *image;
-    QString oldImage(original->toAscii());
     Blob blob;
     QByteArray imgData;
 
     magickImage.read(original->toLocal8Bit().constData());
-/*
+
+    //magickImage.scale(Geometry("1920x1080!"));
+    /*
     if ( width && height )
-        magickImage.scale(Geometry(width, height));
-        */
+        magickImage.scale(Geometry());
+    */
 
     if ( contrast )
         magickImage.contrast(contrast);
 
-    if ( !(brightness == 100) && !(contrast == 100))
-        magickImage.modulate(brightness, saturation, 100);
+    //if ( !(brightness == 100) && !(contrast == 100))
+    magickImage.modulate(brightness, saturation, 100);
 
     magickImage.magick("XPM");
     magickImage.write(&blob);
@@ -232,7 +231,7 @@ QByteArray editImages::enhanceImage(QString *original, int brightness, int satur
     if ( contrast )
         magickImage.contrast(contrast);
 
-    if ( !(brightness == 100) && !(contrast == 100))
+    //if ( !(brightness == 100) && !(saturation == 100))
         magickImage.modulate(brightness, saturation, 100);
 
     magickImage.magick("XPM");

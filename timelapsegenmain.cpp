@@ -21,6 +21,7 @@ TimeLapseGenMain::TimeLapseGenMain(QWidget *parent) :
     brightness = 0;
     contrast   = 0;
     saturation = 0;
+    eType      = None;
 
     ui->labelImage->setScaledContents(1);
     ui->labelImage->setTextFormat(Qt::RichText);
@@ -61,12 +62,52 @@ bool TimeLapseGenMain::checkMencoder()
         buff[strlen(buff)-1] = '\0';
         mencoderCommandPath = new QString(buff);
 
-        qDebug() << "Using mencoder at : " << mencoderCommandPath->toAscii();
+        qDebug() << "Found mencoder at - " << mencoderCommandPath->toAscii();
 
         pclose(fp);
+
+        fp = popen("which avconv", "r");
+        if ( fgets(buff, sizeof(buff), fp) != NULL) {
+            // Remove the last \n
+            buff[strlen(buff)-1] = '\0';
+            avconvCommandPath = new QString(buff);
+            avconvPresent = true;
+
+            qDebug() << "Found avconv at -" << avconvCommandPath->toAscii();
+            pclose(fp);
+        }
+        else
+            QMessageBox::warning(this, "Avconv not found", "avconv utility is not installed, this is required to render high quality MP4 videos", QMessageBox::Ok);
+
         return true;
     }
+
     return false;
+}
+
+bool TimeLapseGenMain::renderVideo(QString cmd)
+{
+    FILE *fp;
+    int rc;
+    char buff[1024];
+
+    fp = popen(cmd.toAscii().constData(), "r");
+
+
+
+    while ( fgets(buff, sizeof(buff), fp) != NULL) {
+        qDebug() << buff;
+    }
+
+    rc = pclose(fp);
+    /*
+    if ( rc != 0)
+    {
+        QMessageBox::warning(this, "Rendering Error", "Unable to render video", QMessageBox::Ok);
+        return false;
+    }
+    */
+    return true;
 }
 
 void TimeLapseGenMain::loadImagesIntoMemory()
@@ -98,6 +139,7 @@ void TimeLapseGenMain::loadImagesIntoMemory()
     }
 
     mencoderPresent = true;
+    avconvPresent   = true;
 
     /* Check if we have required tools to generate timelapse */
     if ( !checkMencoder() )
@@ -148,6 +190,15 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
         resolution      = preferencesDialog->getResolution();
         framesPerSec    = preferencesDialog->getFramesPerSec();
         outPutFileName  = preferencesDialog->getOutFileName();
+        outPutFileName->replace(" ", "\\ ");
+    }
+    else
+        return;
+
+    if ( avconvPresent == false && quality == HighQualityMp4 )
+    {
+        QMessageBox::critical(this, "Can not render", "Rendering high quality MP4 required avconv utility, please try again with a different quality setting", QMessageBox::Ok);
+        return;
     }
 
     /* First create a sub directory to store the images to render */
@@ -164,7 +215,7 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
 
     outputFilePath = infoDir.path();
 
-     if ( brightness == 0 && contrast == 0 && saturation == 0)
+     if ( brightness == 0 && contrast == 0 && saturation == 0 && eType == None)
          needEnhancement = false;
      else
          needEnhancement = true;
@@ -181,10 +232,29 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
     for(int i=0; i< ImageFileInfoList.size(); i++){
         info = ImageFileInfoList.at(i);
 
-        if (!needEnhancement)
+        if (!needEnhancement) {
             map.load(*info.getFilePath());
+            //map.scaled(1920,1080, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
+        }
         else {
-            data = imageEditor->enhanceImageWithoutScaling(info.getFilePath(),(brightness+100), (saturation+100), contrast );
+            if ( eType != None)
+            {
+                switch(eType) {
+                    case vividImage:
+                        data = imageEditor->enhanceImageWithoutScaling(info.getFilePath(), 110, 200, 2000);
+                        break;
+                    case grayScale:
+                        data = imageEditor->enhanceImageWithoutScaling(info.getFilePath(), 100, 0, 100);
+                        break;
+                    case autoEnhance:
+                        data = imageEditor->enhanceImageWithoutScaling(info.getFilePath(), 110, 100, 1400);
+                        break;
+                }
+            }
+            else {
+                data = imageEditor->enhanceImageWithoutScaling(info.getFilePath(),(brightness+100), (saturation+100), contrast );
+            }
+
             map.loadFromData(data,  "XPM");
         }
 
@@ -193,7 +263,7 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
         destName.append(info.getFileName());
 
         map.scaled(1920,1080, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
-        //rc = map.save(destName,"JPEG", 90);
+
         progress.setValue(i);
 
         if ( progress.value() == (progress.maximum()/2) )
@@ -213,9 +283,9 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
     cmd.append(outputFilePath.replace(" ", "\\ "));
     cmd.append("/resized; ls -1rt | grep -v files > files.txt");
 
-    char *str = cmd.toAscii().data();
-    qDebug() << "LS Path : " << str;
-    fp = popen(str, "r");
+    //const char *str = cmd.toAscii().constData();
+    qDebug() << "LS Path : " << cmd.toAscii();
+    fp = popen(cmd.toAscii().constData(), "r");
     rc = pclose(fp);
 
     if (rc != 0 ){
@@ -232,13 +302,16 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
     /* Execute mencoder */
     cmd.clear();
 
+    cmd.append("cd ");
+    cmd.append(outputFilePath);
+    cmd.append("/resized; ");
     cmd.append(mencoderCommandPath->toAscii());
     cmd.append(" -idx -nosound -noskip -ovc lavc -lavcopts ");
     if(quality == HighQualityMp4 ) {
         cmd.append(tr("vcodec=ljpeg -mf fps=%1 'mf://@files.txt' ").arg(framesPerSec));
     }
     else if ( quality == HighQualityAvi) {
-        cmd.append(tr(" vcodec=msmpeg4:vbitrate=10000 -mf type-jpg:fps=%1 'mf://@files.txt' ").arg(framesPerSec));
+        cmd.append(tr(" vcodec=msmpeg4:vbitrate=10000 -mf type=jpeg -mf fps=%1 'mf://@files.txt' ").arg(framesPerSec));
     }
     else if ( quality == LowQualityMp4) {
         cmd.append(tr("vcodec=mpeg4 -mf fps=%1 'mf://@files.txt' ").arg(framesPerSec));
@@ -247,6 +320,9 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
     cmd.append(tr(" -o %1").arg(*outPutFileName));
 
     qDebug() << "CMD : " << cmd.toAscii() << endl;
+
+    /* Now execute mencoder command */
+    renderVideo(cmd);
 }
 
 void TimeLapseGenMain::on_action_Enhance_Images_triggered()
@@ -273,20 +349,34 @@ void TimeLapseGenMain::on_action_Enhance_Images_triggered()
 
     if ( enhanceDialog->exec()  == QDialog::Accepted )
     {
-        brightness = enhanceDialog->getBrightness();
-        contrast   = enhanceDialog->getContrast();
-        saturation = enhanceDialog->getSaturation();
-
-        if ( contrast > 0 )
-            contrast = contrast *1000;
-
         imageEditor = new editImages();
-        data = imageEditor->enhanceImage(enhanceDialog->getImageFileName(), (brightness+100), (saturation+100), contrast);
+        if ( (eType = enhanceDialog->getAutoEnhancementType()) != None  )
+        {
+            switch(eType) {
+                case vividImage:
+                    data = imageEditor->enhanceImage(enhanceDialog->getImageFileName(), 110, 200, 2000);
+                    break;
+                case grayScale:
+                    data = imageEditor->enhanceImage(enhanceDialog->getImageFileName(), 100, 0, 100);
+                    break;
+                case autoEnhance:
+                    data = imageEditor->enhanceImage(enhanceDialog->getImageFileName(), 110, 100, 1400);
+                    break;
+            }
+        }
+        else {
+            brightness = enhanceDialog->getBrightness();
+            contrast   = enhanceDialog->getContrast();
+            saturation = enhanceDialog->getSaturation();
+
+            if ( contrast > 0 )
+                contrast = contrast *1000;
+
+            data = imageEditor->enhanceImage(enhanceDialog->getImageFileName(), (brightness+100), (saturation+100), contrast);
+        }
 
         map.loadFromData(data, "XPM");
-
         ui->labelImage->setPixmap(map);
-        //enhanceDialog->rightImage->setPixmap(map);
     }
 }
 
@@ -329,6 +419,8 @@ imageEnhanceDialog::imageEnhanceDialog(QWidget *parent) :
     mBrightness = 0;
     mContrast   = 0;
     mSaturation = 0;
+
+    eType = None;
 }
 
 imageEnhanceDialog::~imageEnhanceDialog()
@@ -339,8 +431,6 @@ imageEnhanceDialog::~imageEnhanceDialog()
 
 void imageEnhanceDialog::setImages(QString left, QString right)
 {
-    QPixmap *mapLeft, *mapRight;
-
     mapLeft = new QPixmap(left);
     mapRight = new QPixmap(right);
 
@@ -401,7 +491,7 @@ void imageEnhanceDialog::on_sliderBrightness_sliderReleased()
     qDebug() << "Contrast : " << mContrast << endl;
 
     if ( mContrast )
-        localContrast = mContrast * 1000;
+        localContrast = mContrast * 500 + 500;
     else
         localContrast = 0;
 
@@ -435,7 +525,7 @@ void imageEnhanceDialog::on_sliderContrast_sliderReleased()
     qDebug() << "Contrast : " << mContrast << endl;
 
     if ( mContrast )
-        localContrast = mContrast * 1000;
+        localContrast = mContrast * 500 + 500;
     else
         localContrast = 0;
 
@@ -457,7 +547,7 @@ void imageEnhanceDialog::on_sliderSaturation_sliderReleased()
     qDebug() << "Contrast : " << mContrast << endl;
 
     if ( mContrast )
-        localContrast = mContrast * 1000;
+        localContrast = mContrast * 500 + 500;
     else
         localContrast = 0;
 
@@ -507,5 +597,138 @@ void Preferences::on_BtnRender_clicked()
     else {
         QMessageBox::warning(this, "Select Resolution", "Please select a Video resolution", QMessageBox::Ok);
     }
+
+    if ( preferences->spinBoxFrameRate->value() == 0) {
+        QMessageBox::warning(this, "Frame Rate", "Enter a Frame rate...", QMessageBox::Ok);
+        return;
+    }
+    else
+        mFramesPerSec = preferences->spinBoxFrameRate->value();
+
+    if ( outPutFileName == NULL )
+    {
+        QMessageBox::warning(this, "Choose file name", "Please choose a file name to save video...", QMessageBox::Ok);
+        return;
+    }
+    else if ( outPutFileName->isEmpty()){
+        QMessageBox::warning(this, "Choose file name", "Please choose a file name to save video...", QMessageBox::Ok);
+        return;
+    }
+
     this->accept();
+}
+
+void Preferences::on_toolButton_clicked()
+{
+    QString fileName("untitlted.");
+
+    if(mQuality == HighQualityAvi )
+        fileName.append("avi");
+    else
+        fileName.append("mp4");
+
+    outPutFileName = new QString (QFileDialog::getSaveFileName(this, tr("Save Video in a file"),
+                                fileName,
+                                tr("Video files (*.mp4 *.avi)")));
+    if(outPutFileName->isEmpty())
+    {
+        QMessageBox::warning(this, "Choose a file name", "Please choose a file to save the video...", QMessageBox::Ok);
+        return;
+    }
+
+    preferences->lineEditOutFileName->setText(*outPutFileName);
+
+}
+
+
+void Preferences::on_radioBtnMP4High_clicked()
+{
+    mQuality = HighQualityMp4;
+}
+
+
+void Preferences::on_radioBtnAVI_clicked()
+{
+    mQuality = HighQualityAvi;
+}
+
+void imageEnhanceDialog::disableSliders()
+{
+    enhanceDialog->sliderBrightness->setEnabled(false);
+    enhanceDialog->sliderContrast->setEnabled(false);
+    enhanceDialog->sliderSaturation->setEnabled(false);
+}
+
+void imageEnhanceDialog::enableSliders()
+{
+    enhanceDialog->sliderBrightness->setEnabled(true);
+    enhanceDialog->sliderContrast->setEnabled(true);
+    enhanceDialog->sliderSaturation->setEnabled(true);
+}
+
+void imageEnhanceDialog::on_radioBtnNone_clicked(bool checked)
+{
+    if (checked)
+    {
+        enhanceDialog->rightImage->setPixmap(mapRight->scaled(400, 400,Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        enableSliders();
+        eType = None;
+    }
+}
+
+void imageEnhanceDialog::on_radioBtnAutoEnhance_clicked(bool checked)
+{
+    QByteArray data;
+    QPixmap map;
+
+    if ( checked)
+    {
+        disableSliders();
+        data = imageEditor->enhanceImage(imageFileName, 110, 120, 1400);
+
+        map.loadFromData(data, "XPM");
+        enhanceDialog->rightImage->clear();
+        enhanceDialog->rightImage->setPixmap(map);
+
+        eType = autoEnhance;
+    }
+
+}
+
+void imageEnhanceDialog::on_radioBtnVivid_clicked(bool checked)
+{
+    QByteArray data;
+    QPixmap map;
+
+    if(checked)
+    {
+        disableSliders();
+        data = imageEditor->enhanceImage(imageFileName, 110,200,2000);
+
+        map.loadFromData(data, "XPM");
+        enhanceDialog->rightImage->clear();
+        enhanceDialog->rightImage->setPixmap(map);
+
+        eType = vividImage;
+    }
+
+}
+
+void imageEnhanceDialog::on_radioGrayScale_clicked(bool checked)
+{
+    QByteArray data;
+    QPixmap map;
+
+    if(checked)
+    {
+        disableSliders();
+
+        data = imageEditor->enhanceImage(imageFileName, 100,0,100);
+
+        map.loadFromData(data, "XPM");
+        enhanceDialog->rightImage->clear();
+        enhanceDialog->rightImage->setPixmap(map);
+
+        eType = grayScale;
+    }
 }
