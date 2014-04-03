@@ -1,3 +1,17 @@
+/*  timeLapseGen is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "timelapsegenmain.h"
 #include "ui_timelapsegenmain.h"
 #include <QFileDialog>
@@ -11,12 +25,17 @@
 #include <QPixmap>
 #include <QProgressDialog>
 
+QString welcomePage = "<h3>Generate Time Lapse Videos in 3 simple steps </h3><br>" \
+                        "<table width=200px border=0 cellspacing='3' cellpadding='3'>  " \
+                        "<tr><td><img src='img/Camera-icon.png'/></td><td valign='middle'><p>1. Select the images ( Crtl + L ) to generate timelapse</p></td></tr>" \
+                        "<tr><td><img src='img/Pixelmator-icon.png'/></td><td width=150px valign='middle'><p width=150px>2. Enhance Image according to your needs( Crtl + E ). <br>You can change brightness, contrast and saturation of the image.<br> You can also choose between 3 presets available. This is an optional step</p></td></tr>" \
+                        "<tr><td><img src='img/Television-icon.png'/></td><td><p valign='middle'>3. Finally render the timelapse by selecting Video quality and Resolution( Crtl + G )</p></td></tr></table>";
+
 TimeLapseGenMain::TimeLapseGenMain(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TimeLapseGenMain)
 {
     ui->setupUi(this);
-    //filesSelected = false;
 
     brightness = 0;
     contrast   = 0;
@@ -25,6 +44,7 @@ TimeLapseGenMain::TimeLapseGenMain(QWidget *parent) :
 
     ui->labelImage->setScaledContents(1);
     ui->labelImage->setTextFormat(Qt::RichText);
+    ui->labelImage->setText(welcomePage);
     connect(this, SIGNAL(filesSelected()), this, SLOT(loadImagesIntoMemory()));
 }
 
@@ -227,7 +247,6 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
      * 4. Update the progress bar, Since we are enhancing and resizing in the same loop,
      *    change the lable of progress bar to enhancing after 50%
      */
-    //progress.setMaximum(ImageFileInfoList.size());
 
     for(int i=0; i< ImageFileInfoList.size(); i++){
         info = ImageFileInfoList.at(i);
@@ -283,7 +302,6 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
     cmd.append(outputFilePath.replace(" ", "\\ "));
     cmd.append("/resized; ls -1rt | grep -v files > files.txt");
 
-    //const char *str = cmd.toAscii().constData();
     qDebug() << "LS Path : " << cmd.toAscii();
     fp = popen(cmd.toAscii().constData(), "r");
     rc = pclose(fp);
@@ -295,7 +313,6 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
         msg.setIcon(QMessageBox::Critical);
         msg.addButton(QMessageBox::Ok);
         msg.exec();
-        //QMessageBox::information(this, "Error", "Someting went wrong while rendering timelapse... !", QMessageBox::Ok);
         return;
     }
 

@@ -2,7 +2,9 @@ timeLapsePro
 -------------
 
 A GUI application to create a timelapse video. 
-Following are some of the featured provided by the tool
+
+FEATURES
+---------
 
 1. Select all the pictures required for creating a timelapse. 
 2. Basic image editing like changing brightness, contrast, saturation of the image. 
@@ -28,3 +30,15 @@ Below are some of the features yet to be implemented.
 2. Deflicker the images before generating video. 
 3. Save preferences in $HOME/.timelapsegen folder. 
 4. Cropping of images
+
+HOW TO BUILD
+-------------
+
+timeLapseGen is developed using Qt. You need following tools to build the project. 
+
+1. Ubuntu Desktop
+2. QtCreator
+3. Qt SDK 4.8.1 or above
+4. libgraphicsmagick++1-dev & libgraphicsmagick++ packages
+
+Build the application by simply opening the timelapsegen.pro in Qt creator.
