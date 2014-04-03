@@ -121,9 +121,10 @@ private slots:
     void on_BtnCancel_clicked();
     void on_BtnRender_clicked();
 
-    void on_toolButton_clicked();
     void on_radioBtnMP4High_clicked();
     void on_radioBtnAVI_clicked();
+
+    void on_pushButtonChooseFile_clicked();
 
 private :
     Ui::Preferences *preferences;

@@ -14,6 +14,9 @@
 
 #include <QtGui/QApplication>
 #include<QDesktopWidget>
+#include<QSplashScreen>
+#include<QPixmap>
+#include<QTimer>
 #include "timelapsegenmain.h"
 #include <Magick++.h>
 
@@ -25,18 +28,25 @@ int main(int argc, char *argv[])
     InitializeMagick(*argv);
 
     QApplication a(argc, argv);
-    TimeLapseGenMain w;
 
     /* Move the main window to the center of screen */
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
 
+    TimeLapseGenMain w;
     int x = (screenGeometry.width()- w.width()) / 2;
     int y = (screenGeometry.height()- w.height()) / 2;
 
     w.move(x,y);
 
+    QSplashScreen *welcomeScreen  = new QSplashScreen;
+    welcomeScreen->setPixmap(QPixmap("./img/logo.jpg"));
+    welcomeScreen->show();
+    welcomeScreen->showMessage("Loading....", Qt::AlignBottom, Qt::white);
+
+    QTimer::singleShot(2000, welcomeScreen, SLOT(close()));
+
     /* Now show the main window */
-    w.show();
-    
+    QTimer::singleShot(2000, &w, SLOT(show()));
+
     return a.exec();
 }

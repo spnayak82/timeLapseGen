@@ -113,10 +113,16 @@ bool TimeLapseGenMain::renderVideo(QString cmd)
 
     fp = popen(cmd.toAscii().constData(), "r");
 
+    QProgressDialog progress(this);
 
+    progress.setLabelText("Rendering Video....");
+    progress.setWindowModality(Qt::WindowModal);
+    progress.show();
 
+    int i=0;
     while ( fgets(buff, sizeof(buff), fp) != NULL) {
         qDebug() << buff;
+        progress.setValue(i++);
     }
 
     rc = pclose(fp);
@@ -281,7 +287,12 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
         destName.append("/resized/");
         destName.append(info.getFileName());
 
-        map.scaled(1920,1080, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
+        if ( resolution == v720p )
+            map.scaled(1280,720, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
+        else if (resolution == v1080p )
+            map.scaled(1920,1080, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
+        else if (resolution == v1440p)
+            map.scaled(2560,1440, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).save(destName,"JPEG", 95);
 
         progress.setValue(i);
 
@@ -334,7 +345,14 @@ void TimeLapseGenMain::on_actionGenerate_Timelapse_triggered()
         cmd.append(tr("vcodec=mpeg4 -mf fps=%1 'mf://@files.txt' ").arg(framesPerSec));
     }
 
-    cmd.append(tr(" -o %1").arg(*outPutFileName));
+    if ( quality == HighQualityMp4 ) {
+        cmd.append(" -o temp.avi; ");
+        cmd.append("avconv -i temp.avi -c:v libx264 -preset slow -crf " );
+        cmd.append(tr("%1 ").arg(framesPerSec));
+        cmd.append(*outPutFileName);
+    }
+    else
+        cmd.append(tr(" -o %1").arg(*outPutFileName));
 
     qDebug() << "CMD : " << cmd.toAscii() << endl;
 
@@ -635,29 +653,6 @@ void Preferences::on_BtnRender_clicked()
     this->accept();
 }
 
-void Preferences::on_toolButton_clicked()
-{
-    QString fileName("untitlted.");
-
-    if(mQuality == HighQualityAvi )
-        fileName.append("avi");
-    else
-        fileName.append("mp4");
-
-    outPutFileName = new QString (QFileDialog::getSaveFileName(this, tr("Save Video in a file"),
-                                fileName,
-                                tr("Video files (*.mp4 *.avi)")));
-    if(outPutFileName->isEmpty())
-    {
-        QMessageBox::warning(this, "Choose a file name", "Please choose a file to save the video...", QMessageBox::Ok);
-        return;
-    }
-
-    preferences->lineEditOutFileName->setText(*outPutFileName);
-
-}
-
-
 void Preferences::on_radioBtnMP4High_clicked()
 {
     mQuality = HighQualityMp4;
@@ -748,4 +743,25 @@ void imageEnhanceDialog::on_radioGrayScale_clicked(bool checked)
 
         eType = grayScale;
     }
+}
+
+void Preferences::on_pushButtonChooseFile_clicked()
+{
+    QString fileName("untitlted.");
+
+    if(mQuality == HighQualityAvi )
+        fileName.append("avi");
+    else
+        fileName.append("mp4");
+
+    outPutFileName = new QString (QFileDialog::getSaveFileName(this, tr("Save Video in a file"),
+                                fileName,
+                                tr("Video files (*.mp4 *.avi)")));
+    if(outPutFileName->isEmpty())
+    {
+        QMessageBox::warning(this, "Choose a file name", "Please choose a file to save the video...", QMessageBox::Ok);
+        return;
+    }
+
+    preferences->lineEditOutFileName->setText(*outPutFileName);
 }
