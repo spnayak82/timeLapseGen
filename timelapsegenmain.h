@@ -153,6 +153,8 @@ private slots:
     void on_action_Enhance_Images_triggered();
     void on_actionGenerate_Timelapse_triggered();
 
+    void on_action_Preferences_triggered();
+
 private:
     Ui::TimeLapseGenMain *ui;
     imageEnhanceDialog *enhanceDialog;

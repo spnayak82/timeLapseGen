@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     w.move(x,y);
 
     QSplashScreen *welcomeScreen  = new QSplashScreen;
-    welcomeScreen->setPixmap(QPixmap("./img/logo.jpg"));
+    welcomeScreen->setPixmap(QPixmap(":/root/img/logo.jpg"));
     welcomeScreen->show();
     welcomeScreen->showMessage("Loading....", Qt::AlignBottom, Qt::white);
 

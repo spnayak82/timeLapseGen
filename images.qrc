@@ -6,5 +6,6 @@
         <file>img/Video-icon.png</file>
         <file>img/Pixelmator-icon.png</file>
         <file>img/Time-Machine-icon.png</file>
+        <file>img/logo.jpg</file>
     </qresource>
 </RCC>

@@ -22,6 +22,7 @@ QT       += core gui
 TARGET = timeLapseGen
 TEMPLATE = app
 
+CONFIG += x86
 
 SOURCES += main.cpp\
         timelapsegenmain.cpp \

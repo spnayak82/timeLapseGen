@@ -25,11 +25,11 @@
 #include <QPixmap>
 #include <QProgressDialog>
 
-QString welcomePage = "<h3>Generate Time Lapse Videos in 3 simple steps </h3><br>" \
+QString welcomePage = "<h3>Generate Time Lapse Videos in 3 easy steps </h3><br>" \
                         "<table width=200px border=0 cellspacing='3' cellpadding='3'>  " \
-                        "<tr><td><img src='img/Camera-icon.png'/></td><td valign='middle'><p>1. Select the images ( Crtl + L ) to generate timelapse</p></td></tr>" \
-                        "<tr><td><img src='img/Pixelmator-icon.png'/></td><td width=150px valign='middle'><p width=150px>2. Enhance Image according to your needs( Crtl + E ). <br>You can change brightness, contrast and saturation of the image.<br> You can also choose between 3 presets available. This is an optional step</p></td></tr>" \
-                        "<tr><td><img src='img/Television-icon.png'/></td><td><p valign='middle'>3. Finally render the timelapse by selecting Video quality and Resolution( Crtl + G )</p></td></tr></table>";
+                        "<tr><td><img src=':/root/img/Camera-icon.png'/></td><td valign='middle'><p>1. Select the images ( Crtl + L ) to generate timelapse</p></td></tr>" \
+                        "<tr><td><img src=':/root/img/Pixelmator-icon.png'/></td><td width=150px valign='middle'><p width=150px>2. Enhance Image according to your needs( Crtl + E ). <br>You can change brightness, contrast and saturation of the image.<br> You can also choose between 3 presets available. This is an optional step</p></td></tr>" \
+                        "<tr><td><img src=':/root/img/Television-icon.png'/></td><td><p valign='middle'>3. Finally render the timelapse by selecting Video quality and Resolution( Crtl + G )</p></td></tr></table>";
 
 TimeLapseGenMain::TimeLapseGenMain(QWidget *parent) :
     QMainWindow(parent),
@@ -764,4 +764,9 @@ void Preferences::on_pushButtonChooseFile_clicked()
     }
 
     preferences->lineEditOutFileName->setText(*outPutFileName);
+}
+
+void TimeLapseGenMain::on_action_Preferences_triggered()
+{
+    QMessageBox::information(this, "Feature not found", "This Feature is not yet available", QMessageBox::Ok);
 }
